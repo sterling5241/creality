@@ -55,13 +55,6 @@ get_version() {
 compare_version() {
     local version=$1
     local fw_dir=$2
-    # role is the FIXED serial-port role (mcu0/bed0/noz0) this call is
-    # for -- always used to select the target file. A board's own
-    # self-reported hw_version (parsed from $version below) can be
-    # wrong on units with a real chip-provisioning defect, so it's only
-    # used for logging/sanity-checking here, never for file selection.
-    # See: https://github.com/pellcorp/creality issue discussion on the
-    # F001 leveling board chip mismatch.
     local role=$3
 
     # version example: mcu0_110_G32-mcu0_000_000
