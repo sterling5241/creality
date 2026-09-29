@@ -2077,6 +2077,7 @@ fi
     probe_switch=false
     old_probe=
     mount=
+    reinstall_component=
 
     if [ -f /usr/data/pellcorp.done ]; then
         install_mount=$(cat /usr/data/pellcorp.done | grep "mount=" | awk -F '=' '{print $2}')
@@ -2089,6 +2090,14 @@ fi
             if [ "$mode" = "clean-install" ] || [ "$mode" = "clean-reinstall" ] || [ "$mode" = "clean-update" ]; then
                 skip_overrides=true
                 mode=$(echo $mode | sed 's/clean-//g')
+            fi
+            if [ "$mode" = "reinstall" ]; then
+                case "$1" in
+                    klipper|moonraker|nginx|fluidd|mainsail)
+                        reinstall_component=$1
+                        shift
+                        ;;
+                esac
             fi
         elif [ "$1" = "--kalico" ]; then
             klipper_fork=kalico
@@ -2261,7 +2270,7 @@ fi
           else
               exit 1
           fi
-      elif [ "$skip_overrides" = "true" ] || [ "$mode" = "install" ] || [ "$mode" = "reinstall" ]; then
+      elif [ "$skip_overrides" = "true" ] || [ "$mode" = "install" ] || ([ "$mode" = "reinstall" ] && [ -z "$reinstall_component" ]); then
           echo "ERROR: Mount option must be specified"
           exit 1
       elif [ -f /usr/data/pellcorp.done ]; then
@@ -2409,7 +2418,25 @@ fi
         echo "INFO: Configuration overrides will not be saved or applied"
     fi
 
-    if [ "$mode" = "reinstall" ] || [ "$mode" = "update" ]; then
+    if [ -n "$reinstall_component" ]; then
+        echo "INFO: Reinstalling $reinstall_component only"
+
+        if [ -f /usr/data/pellcorp.done ]; then
+            # strip the target marker plus any prior installed_sha line, a fresh one is appended
+            # once this run completes - leaving old ones would just pile up on repeated use
+            grep -v "^${reinstall_component}\$" /usr/data/pellcorp.done | grep -v "^installed_sha=" > /usr/data/pellcorp.done.tmp
+            mv /usr/data/pellcorp.done.tmp /usr/data/pellcorp.done
+
+            # the fluidd/mainsail theme setup is considered part of reinstalling that component
+            if [ "$reinstall_component" = "fluidd" ]; then
+                grep -v "^fluidd-theme\$" /usr/data/pellcorp.done > /usr/data/pellcorp.done.tmp
+                mv /usr/data/pellcorp.done.tmp /usr/data/pellcorp.done
+            elif [ "$reinstall_component" = "mainsail" ]; then
+                grep -v "^mainsail-theme\$" /usr/data/pellcorp.done > /usr/data/pellcorp.done.tmp
+                mv /usr/data/pellcorp.done.tmp /usr/data/pellcorp.done
+            fi
+        fi
+    elif [ "$mode" = "reinstall" ] || [ "$mode" = "update" ]; then
         if [ "$skip_overrides" != "true" ]; then
             if [ -f /usr/data/pellcorp-backups/printer.cfg ]; then
                 /usr/data/pellcorp/tools/config-overrides.sh
