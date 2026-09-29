@@ -1462,7 +1462,13 @@ set -o pipefail # preserve installer failures through tee
     exit 1
   fi
 
-  cleanup_probes
+  # a scoped component reinstall should never touch probe config at all, that's not what it's for -
+  # cleanup_probes wipes every probe's files unconditionally (including the active one) relying on
+  # the matching setup_<probe> call below to recreate it, which won't happen if that probe's own
+  # marker wasn't cleared
+  if [ -z "$reinstall_component" ]; then
+    cleanup_probes
+  fi
 
   install_cartographer_klipper=0
   install_cartographer_plugin=0
