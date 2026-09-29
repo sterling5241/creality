@@ -2459,13 +2459,16 @@ fi
     [ -f /usr/data/printer_data/config/fan_control.cfg ] && rm /usr/data/printer_data/config/fan_control.cfg
     [ -f /usr/data/printer_data/config/sensorless.cfg ] && rm /usr/data/printer_data/config/sensorless.cfg
 
-    # we do this step for install, reinstall and update
-    if [ -f /usr/data/pellcorp-backups/printer.factory.cfg ]; then
-        cp /usr/data/pellcorp-backups/printer.factory.cfg /usr/data/printer_data/config/printer.cfg
-        sed -i "1s/^/# Modified by Simple AF ${TIMESTAMP}\n/" /usr/data/printer_data/config/printer.cfg
-    elif [ "$mode" = "update" ]; then
-        echo "ERROR: Update mode is not available as pristine printer.factory.cfg is missing"
-        exit 1
+    # we do this step for install, reinstall and update - a scoped component reinstall should
+    # never touch printer.cfg at all, that's not what it's for
+    if [ -z "$reinstall_component" ]; then
+        if [ -f /usr/data/pellcorp-backups/printer.factory.cfg ]; then
+            cp /usr/data/pellcorp-backups/printer.factory.cfg /usr/data/printer_data/config/printer.cfg
+            sed -i "1s/^/# Modified by Simple AF ${TIMESTAMP}\n/" /usr/data/printer_data/config/printer.cfg
+        elif [ "$mode" = "update" ]; then
+            echo "ERROR: Update mode is not available as pristine printer.factory.cfg is missing"
+            exit 1
+        fi
     fi
 
     if [ ! -f /usr/data/pellcorp.done ]; then

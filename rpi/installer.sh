@@ -1407,7 +1407,8 @@ set -o pipefail # preserve installer failures through tee
   fi
 
   mkdir -p $BASEDIR/printer_data/config/
-  if [ -f $BASEDIR/pellcorp-backups/printer.factory.cfg ]; then
+  # a scoped component reinstall should never touch printer.cfg at all, that's not what it's for
+  if [ -z "$reinstall_component" ] && [ -f $BASEDIR/pellcorp-backups/printer.factory.cfg ]; then
     cp $BASEDIR/pellcorp-backups/printer.factory.cfg $BASEDIR/printer_data/config/printer.cfg
   fi
 
