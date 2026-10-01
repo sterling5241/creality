@@ -59,9 +59,7 @@ if [ -f $VERSION_FILE ] && [ -d $FW_DIR ]; then
       fi
 
       # So the CR10SE (F003) has no bed mcu far as I can tell
-      # The Ender 3 V3 CoreXZ (F001/F002) do have but they often seem to use the nozzle mcu for the bed
-      # so the current test gets confused, I will fix for Ender 3 V3 CoreXZ but not today
-      if [ "$MODEL" != "F003" ] && [ "$MODEL" != "F001" ]; then
+      if [ "$MODEL" != "F003" ]; then
         fw_bed_version=$(cat $VERSION_FILE | grep "bed_version" | awk -F '=' ' {print $2}')
         file_bed_version=$(basename $(ls $FW_DIR/bed*) .bin 2> /dev/null)
 
