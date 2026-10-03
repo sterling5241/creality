@@ -834,6 +834,10 @@ function install_klipper() {
             if [ "$remote_repo" = "k1-carto-klipper" ]; then
                 echo "INFO: Forcing Klipper repo to be switched from pellcorp/${remote_repo} to pellcorp/${klipper_fork}"
                 rm -rf /usr/data/klipper/
+            # load cells require kalico
+            elif [ "$probe" = "loadcells" ] && [ "$remote_repo" != "kalico" ]; then
+                echo "INFO: Forcing Klipper repo to be switched from pellcorp/${remote_repo} to pellcorp/kalico for loadcells"
+                rm -rf /usr/data/klipper/
             fi
         fi
 
@@ -2250,16 +2254,17 @@ fi
           echo
         fi
 
-        current_fork=$klipper_fork
-        if [ -d /usr/data/klipper/.git ]; then
+        # load cells require kalico, for an install or reinstall we force it
+        if [ "$mode" = "install" ] || [ "$mode" = "reinstall" ]; then
+            klipper_fork=kalico
+        elif [ -d /usr/data/klipper/.git ]; then
             cd /usr/data/klipper/
             remote_repo=$(git remote get-url origin | awk -F '/' '{print $NF}' | sed 's/.git//g')
             cd - > /dev/null
-            [ "$remote_repo" = "kalico" ] && current_fork=kalico
-        fi
-        if [ "$current_fork" != "kalico" ]; then
-            echo "ERROR: loadcells requires kalico, use --kalico"
-            exit 1
+            if [ "$remote_repo" != "kalico" ]; then
+                echo "ERROR: loadcells requires kalico, switch to kalico first with: installer.sh --kalico"
+                exit 1
+            fi
         fi
     fi
 
