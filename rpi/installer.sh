@@ -1435,7 +1435,14 @@ set -o pipefail # preserve installer failures through tee
 
   touch $BASEDIR/pellcorp.done
 
-  $BASEDIR/pellcorp/rpi/install-moonraker.sh $mode
+  # a SimpleAFOS image comes with moonraker, crowsnest and klipper already installed,
+  # updating them rather than installing them keeps them instead of starting over
+  preinstalled_mode=$mode
+  if [ "$mode" = "install" ] && [ -f $BASEDIR/pellcorp.preinstalled ]; then
+    preinstalled_mode=update
+  fi
+
+  $BASEDIR/pellcorp/rpi/install-moonraker.sh $preinstalled_mode
   if [ $? -ne 0 ]; then
     echo "FATAL: Moonraker installation failed - aborting"
     exit 1
@@ -1444,7 +1451,7 @@ set -o pipefail # preserve installer failures through tee
   if [ "$(sudo systemctl is-enabled crowsnest 2> /dev/null)" = "disabled" ]; then
     echo "INFO: Crowsnest is disabled"
   else
-    $BASEDIR/pellcorp/rpi/install-crowsnest.sh $mode || exit $?
+    $BASEDIR/pellcorp/rpi/install-crowsnest.sh $preinstalled_mode || exit $?
   fi
 
   $BASEDIR/pellcorp/rpi/install-fluidd.sh $mode || exit $?
@@ -1465,7 +1472,7 @@ set -o pipefail # preserve installer failures through tee
     exit 1
   fi
 
-  KLIPPER_FORK=$klipper_fork $BASEDIR/pellcorp/rpi/install-klipper.sh $mode $probe || exit $?
+  KLIPPER_FORK=$klipper_fork $BASEDIR/pellcorp/rpi/install-klipper.sh $preinstalled_mode $probe || exit $?
   if [ $? -ne 0 ]; then
     echo "FATAL: Klipper installation failed - aborting"
     exit 1
@@ -1630,6 +1637,7 @@ set -o pipefail # preserve installer failures through tee
   fi
 
   echo "installed_sha=$PELLCORP_GIT_SHA" >> $BASEDIR/pellcorp.done
+  [ -f $BASEDIR/pellcorp.preinstalled ] && rm $BASEDIR/pellcorp.preinstalled
   sync
 
   exit 0
